@@ -33,6 +33,16 @@ function showToast(msg) {
 }
 window.showToast = showToast;
 
+let lastSyncToastTime = 0;
+function showSyncSuccessToast() {
+  const now = Date.now();
+  if (now - lastSyncToastTime > 2000) {
+    lastSyncToastTime = now;
+    showToast("☁️ 作業登記已成功同步至雲端");
+  }
+}
+window.showSyncSuccessToast = showSyncSuccessToast;
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -1204,7 +1214,11 @@ function openClassModal() {
 }
 
 function handleSyncPillClick() {
-  CloudSync.pullNow();
+  if (!CloudSync.isEdit()) {
+    openAuthModal("目前為「唯讀檢視模式」，請先輸入管理密碼解鎖進入編輯模式。");
+  } else {
+    CloudSync.pullNow();
+  }
 }
 
 function handleEditModeClick() {

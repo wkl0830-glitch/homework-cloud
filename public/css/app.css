@@ -182,6 +182,39 @@ body {
 .status-pill.synced .dot { background: var(--emerald); }
 .status-pill.syncing .dot { background: var(--blue); animation: pulse 1s infinite; }
 .status-pill.error .dot { background: var(--rose); }
+.status-pill.readonly {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+.status-pill.readonly .dot {
+  background: #94a3b8;
+}
+
+.readonly-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fffbeb;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+  padding: 12px 18px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 14.5px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #d97706;
+  transition: all 0.15s ease;
+}
+.readonly-warning-banner:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #d97706;
+}
+.readonly-warning-banner strong {
+  color: #b45309;
+  text-decoration: underline;
+}
 
 .mode-pill.unlocked {
   background: var(--emerald-soft);

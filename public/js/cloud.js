@@ -3,7 +3,7 @@
   const CLOUD_REV_KEY = "cloud_rev";
   const CLOUD_DIRTY_KEY = "cloud_dirty";
   const CLOUD_LAST_SYNC_KEY = "cloud_last_sync";
-  const SYNC_DELAY = 500; // 手機點選後 0.5 秒快速合併上傳
+  const SYNC_DELAY = 50; // 手機點選後 0.05 秒極速秒傳，不再長時間延遲等待
 
   let cloudPass = sessionStorage.getItem(CLOUD_PASS_KEY) || localStorage.getItem(CLOUD_PASS_KEY) || "";
   let isConnected = false;
@@ -40,8 +40,15 @@
     const pill = document.getElementById("syncStatusPill");
     const textEl = document.getElementById("syncStatusText");
     if (pill && textEl) {
-      pill.className = `status-pill ${stateClass || ""}`;
-      textEl.textContent = stateText;
+      if (!isEditMode) {
+        pill.className = "status-pill readonly";
+        textEl.textContent = isConnected ? "唯讀檢視" : (stateText || "未連線");
+        pill.title = "目前為唯讀檢視模式（點擊可解鎖）";
+      } else {
+        pill.className = `status-pill ${stateClass || ""}`;
+        textEl.textContent = stateText;
+        pill.title = "編輯模式：修改即時秒傳雲端";
+      }
     }
 
     const modePill = document.getElementById("editModePill");
@@ -50,7 +57,12 @@
     if (modePill && modeIcon && modeText) {
       modePill.className = `mode-pill ${isEditMode ? "unlocked" : "locked"}`;
       modeIcon.textContent = isEditMode ? "✏️" : "🔒";
-      modeText.textContent = isEditMode ? "編輯模式" : "檢視模式";
+      modeText.textContent = isEditMode ? "編輯模式" : "點此解鎖";
+    }
+
+    const warningBanner = document.getElementById("readonlyWarningBanner");
+    if (warningBanner) {
+      warningBanner.style.display = isEditMode ? "none" : "flex";
     }
 
     const heroUnlockBtn = document.getElementById("heroUnlockBtn");
@@ -148,6 +160,9 @@
       }
       localStorage.setItem(CLOUD_LAST_SYNC_KEY, new Date().toLocaleString("zh-TW"));
       updateUI("已同步", "synced");
+      if (!keepalive && typeof window.showSyncSuccessToast === "function") {
+        window.showSyncSuccessToast();
+      }
       return true;
     } catch (err) {
       for (const k of keys) dirtyKeys.add(k);
@@ -316,10 +331,13 @@
     updateUI("已同步", "synced");
   }
 
-  function requireEdit() {
+  function requireEdit(actionName = "修改") {
     if (isEditMode) return true;
+    if (typeof window.showToast === "function") {
+      window.showToast("🔒 目前為「唯讀檢視模式」，請先輸入密碼解鎖！");
+    }
     if (typeof window.openAuthModal === "function") {
-      window.openAuthModal("目前為檢視模式，請輸入管理密碼後再進行修改。");
+      window.openAuthModal(`目前為唯讀檢視模式。若要登記作業或進行${actionName}，請先輸入管理密碼解鎖進入編輯模式。`);
     }
     return false;
   }
