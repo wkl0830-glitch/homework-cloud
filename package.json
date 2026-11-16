@@ -1,0 +1,12 @@
+{
+  "name": "homework-cloud",
+  "version": "1.0.0",
+  "description": "作業管理雲端系統",
+  "scripts": {
+    "deploy": "wrangler pages deploy public --project-name=homework-cloud",
+    "dev": "wrangler pages dev public"
+  },
+  "devDependencies": {
+    "wrangler": "^4.136.1"
+  }
+}

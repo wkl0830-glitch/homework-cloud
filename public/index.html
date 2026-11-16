@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>作業管理雲端系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css?v=cute1">
+</head>
+<body>
+  <!-- 頂部導覽列 -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-group">
+        <div class="brand-logo" title="作業管理雲端系統">🎒</div>
+        <div>
+          <div class="brand-title">作業管理雲端系統</div>
+          <button id="classSwitcherBtn" class="class-pill" onclick="openClassModal()">
+            <span id="currentClassLabel">尚未選擇班級</span>
+            <span class="chevron">▾</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="syncStatusPill" class="status-pill" onclick="handleSyncPillClick()" title="雲端同步狀態">
+          <span class="dot"></span>
+          <span id="syncStatusText">連線中...</span>
+        </button>
+        <button id="editModePill" class="mode-pill locked" onclick="handleEditModeClick()">
+          <span id="editModeIcon">🔒</span>
+          <span id="editModeText">檢視模式</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 桌面版分頁導覽 + 手機版頂部/底部導覽 -->
+  <nav class="main-nav" aria-label="主導覽">
+    <button class="nav-tab active" data-view="calendar" onclick="switchView('calendar')">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">作業日曆</span>
+    </button>
+    <button class="nav-tab" data-view="checklist" onclick="switchView('checklist')">
+      <span class="nav-icon">✅</span>
+      <span class="nav-label">作業檢核</span>
+    </button>
+    <button class="nav-tab" data-view="tracking" onclick="switchView('tracking')">
+      <span class="nav-icon">🔍</span>
+      <span class="nav-label">作業追蹤</span>
+    </button>
+    <button class="nav-tab" data-view="settings" onclick="switchView('settings')">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">班級與名單</span>
+    </button>
+  </nav>
+
+  <!-- 主內容區 -->
+  <main class="container">
+    <!-- 尚未選擇班級的歡迎引導 -->
+    <section id="emptyClassBanner" class="card empty-hero" style="display:none;">
+      <div class="empty-hero-icon">🏫</div>
+      <h2>歡迎使用作業管理雲端系統</h2>
+      <p>專注於每日作業登記、手機快速檢核與缺交追蹤，教室電腦與手機即時同步。</p>
+      <div class="empty-hero-actions">
+        <button class="btn btn-primary" onclick="switchView('settings')">➕ 建立或選擇班級</button>
+        <button class="btn btn-secondary" onclick="openAuthModal()" id="heroUnlockBtn">🔓 輸入管理密碼</button>
+      </div>
+    </section>
+
+    <!-- 視圖 1：作業日曆 -->
+    <section id="view-calendar" class="view-panel active">
+      <div class="panel-header">
+        <div class="month-nav">
+          <button class="btn btn-icon" onclick="changeMonth(-1)" aria-label="上個月">◀</button>
+          <h2 id="calendarTitle" class="month-title">2026年 11月</h2>
+          <button class="btn btn-icon" onclick="changeMonth(1)" aria-label="下個月">▶</button>
+          <button class="btn btn-ghost btn-sm" onclick="goToday()">今天</button>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" onclick="openDayHomeworkModal(getTodayKey())">
+            <span>✏️</span> 登記今日作業
+          </button>
+          <button class="btn btn-secondary" onclick="openTodayChecklist()">
+            <span>✅</span> 檢核今日作業
+          </button>
+        </div>
+      </div>
+
+      <div class="card calendar-card">
+        <div class="calendar-weekdays">
+          <div class="weekend">日</div>
+          <div>一</div>
+          <div>二</div>
+          <div>三</div>
+          <div>四</div>
+          <div>五</div>
+          <div class="weekend">六</div>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </div>
+    </section>
+
+    <!-- 視圖 2：作業檢核 -->
+    <section id="view-checklist" class="view-panel">
+      <div class="panel-header">
+        <div class="checklist-date-bar">
+          <label for="checklistDateInput" class="sr-only">選擇日期</label>
+          <input type="date" id="checklistDateInput" class="input-date" onchange="onChecklistDateChange(this.value)">
+          <button class="btn btn-ghost btn-sm" onclick="openDayHomeworkModal(currentChecklistDateKey)">✏️ 編輯作業項目</button>
+          <button class="btn btn-ghost btn-sm" onclick="openProjectionModal(currentChecklistDateKey)">📺 投影聯絡簿</button>
+        </div>
+        <div class="panel-actions">
+          <button class="btn btn-primary btn-sm" onclick="openIncompleteSummaryModal()">👀 未完成名單總覽</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleChecklistMode()" id="toggleModeBtn">📊 切換表格</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyMissingReport()">📋 複製缺交名單</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportChecklistPng()">🖼️ 匯出圖片</button>
+          <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ 列印 / PDF</button>
+        </div>
+      </div>
+
+      <!-- 作業頁籤 -->
+      <div id="checklistHwTabs" class="hw-tabs"></div>
+
+      <!-- 統計摘要 -->
+      <div id="checklistSummary" class="summary-grid"></div>
+
+      <!-- 篩選與批次工具列 -->
+      <div id="checklistToolbar" class="toolbar card">
+        <div class="filter-pills">
+          <button class="filter-pill active" data-filter="all" onclick="setChecklistFilter('all')">全部</button>
+          <button class="filter-pill" data-filter="incomplete" onclick="setChecklistFilter('incomplete')">未完成</button>
+          <button class="filter-pill" data-filter="red" onclick="setChecklistFilter('red')">未繳交</button>
+          <button class="filter-pill" data-filter="orange" onclick="setChecklistFilter('orange')">待訂正</button>
+        </div>
+        <div class="batch-actions">
+          <button class="btn btn-emerald btn-sm" onclick="markAllSubmitted()">✅ 全部設為已交</button>
+          <button class="btn btn-ghost btn-sm" onclick="cycleAllCurrentAssignment()">🔄 整項切換</button>
+        </div>
+      </div>
+
+      <!-- 手機/卡片視圖 -->
+      <div id="checklistCardsContainer" class="student-card-grid"></div>
+
+      <!-- 桌面/表格視圖 -->
+      <div id="checklistTableContainer" class="card table-wrapper" style="display:none;"></div>
+    </section>
+
+    <!-- 視圖 3：作業追蹤 -->
+    <section id="view-tracking" class="view-panel">
+      <div class="card">
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-sub="range" onclick="switchTrackingTab('range')">📅 依日期區間</button>
+          <button class="sub-tab" data-sub="student" onclick="switchTrackingTab('student')">👤 依學生查詢</button>
+          <button class="sub-tab" data-sub="search" onclick="switchTrackingTab('search')">📝 作業列表搜尋</button>
+        </div>
+
+        <!-- 依日期區間 -->
+        <div id="track-range" class="track-pane active">
+          <div class="form-row">
+            <div class="form-field">
+              <label>開始日期</label>
+              <input type="date" id="trackStartDate" class="input">
+            </div>
+            <div class="form-field">
+              <label>結束日期</label>
+              <input type="date" id="trackEndDate" class="input">
+            </div>
+            <div class="form-field form-btn">
+              <button class="btn btn-primary" onclick="runTrackByRange()">🔍 查詢未完成</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 依學生查詢 -->
+        <div id="track-student" class="track-pane">
+          <div class="form-row">
+            <div class="form-field" style="flex:2;">
+              <label>選擇學生</label>
+              <select id="trackStudentSelect" class="input"></select>
+            </div>
+            <div class="form-field form-btn">
+              <button class="btn btn-primary" onclick="runTrackByStudent()">🔍 查詢該生未完成</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 作業列表搜尋 -->
+        <div id="track-search" class="track-pane">
+          <div class="form-row">
+            <div class="form-field">
+              <label>開始日期（選填）</label>
+              <input type="date" id="searchStartDate" class="input">
+            </div>
+            <div class="form-field">
+              <label>結束日期（選填）</label>
+              <input type="date" id="searchEndDate" class="input">
+            </div>
+            <div class="form-field" style="flex:2;">
+              <label>關鍵字（選填）</label>
+              <input type="text" id="searchKeyword" class="input" placeholder="例如：國習、數學、生字...">
+            </div>
+            <div class="form-field form-btn">
+              <button class="btn btn-primary" onclick="runTrackSearch()">🔍 搜尋作業</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="trackingResults" class="tracking-results"></div>
+    </section>
+
+    <!-- 視圖 4：班級與名單管理 -->
+    <section id="view-settings" class="view-panel">
+      <div class="settings-grid">
+        <!-- 班級管理 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🏫 班級管理</h3>
+            <button class="btn btn-primary btn-sm" onclick="promptAddClass()">➕ 新增班級</button>
+          </div>
+          <div id="settingsClassList" class="class-manage-list"></div>
+        </div>
+
+        <!-- 學生名單管理 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>👥 學生名單 <span id="studentCountPill" class="badge">0 人</span></h3>
+            <div class="card-header-actions">
+              <button class="btn btn-secondary btn-sm" onclick="toggleBulkStudentBox()">📋 批次貼上</button>
+            </div>
+          </div>
+
+          <div class="inline-add-row">
+            <input type="text" id="singleStudentInput" class="input" placeholder="輸入學生姓名後按 Enter 新增"
+              onkeydown="if(event.key==='Enter') addSingleStudent()">
+            <button class="btn btn-primary" onclick="addSingleStudent()">新增</button>
+          </div>
+
+          <div id="bulkStudentBox" class="bulk-box" style="display:none;">
+            <textarea id="bulkStudentTextarea" class="input textarea" rows="4" placeholder="每行一位學生姓名，可直接從 Excel 複製整欄貼上"></textarea>
+            <div class="bulk-actions">
+              <button class="btn btn-primary btn-sm" onclick="addBulkStudents()">加入名單</button>
+              <button class="btn btn-ghost btn-sm" onclick="toggleBulkStudentBox()">取消</button>
+            </div>
+          </div>
+
+          <div id="studentManageList" class="student-manage-list"></div>
+        </div>
+
+        <!-- 雲端同步與備份 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>☁️ 雲端同步與資料備份</h3>
+          </div>
+          <div class="sync-info-box">
+            <div><strong>連線狀態：</strong><span id="settingsSyncDetail">檢查中...</span></div>
+            <div><strong>上次同步：</strong><span id="settingsLastSync">尚未同步</span></div>
+          </div>
+          <div class="backup-actions">
+            <button class="btn btn-primary" onclick="forcePushNow()">⬆️ 立即上傳雲端</button>
+            <button class="btn btn-secondary" onclick="forcePullNow()">⬇️ 重新從雲端載入</button>
+            <button class="btn btn-secondary" onclick="exportBackupJson('current')">📤 匯出當前班級備份</button>
+            <button class="btn btn-secondary" onclick="exportBackupJson('all')">📚 匯出全部班級備份</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('importJsonInput').click()">📥 匯入備份檔 (相容舊版)</button>
+            <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="handleImportJson(event)">
+          </div>
+        </div>
+
+        <!-- 分享唯讀網址 -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🔗 分享唯讀網址</h3>
+          </div>
+          <p class="muted-text">透過此網址或 QR Code 開啟僅能檢視作業狀態，需輸入管理密碼才能修改資料。</p>
+          <div class="inline-add-row">
+            <input type="text" id="shareLinkInput" class="input" readonly>
+            <button class="btn btn-secondary" onclick="copyShareLink()">複製</button>
+          </div>
+          <div class="qr-box">
+            <img id="shareQrImg" alt="分享 QR Code">
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 彈窗：每日作業登記與管理 -->
+  <div id="dayHomeworkModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('dayHomeworkModal')">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="dayHwModalTitle">登記作業</h3>
+        <button class="btn-close" onclick="closeModal('dayHomeworkModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="quick-tags">
+          <span class="quick-tags-label">快速加入：</span>
+          <button class="tag-btn" onclick="appendQuickHw('國語習作')">+ 國語習作</button>
+          <button class="tag-btn" onclick="appendQuickHw('數學練習簿')">+ 數學練習簿</button>
+          <button class="tag-btn" onclick="appendQuickHw('生字語詞')">+ 生字語詞</button>
+          <button class="tag-btn" onclick="appendQuickHw('訂正考卷')">+ 訂正考卷</button>
+          <button class="tag-btn" onclick="appendQuickHw('閱讀學習單')">+ 閱讀學習單</button>
+        </div>
+        <textarea id="dayHwTextarea" class="input textarea" rows="6" placeholder="每行輸入一項作業，例如：&#10;國語習作 P.12-15&#10;數學練習簿 第3回"></textarea>
+        <p class="muted-text">每行代表一項獨立作業，儲存後會自動同步至雲端。</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="openProjectionFromModal()">📺 投影聯絡簿</button>
+        <button class="btn btn-secondary" onclick="goChecklistFromModal()">✅ 去檢核</button>
+        <button class="btn btn-primary" onclick="saveDayHomework()">💾 儲存作業</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗：投影聯絡簿 -->
+  <div id="projectionModal" class="projection-backdrop" onclick="if(event.target===this) closeModal('projectionModal')">
+    <div class="projection-card">
+      <div class="projection-header">
+        <div>
+          <div id="projClassTitle" class="proj-class"></div>
+          <h2 id="projDateTitle" class="proj-date"></h2>
+        </div>
+        <button class="btn btn-ghost" onclick="closeModal('projectionModal')">✕ 關閉投影</button>
+      </div>
+      <ol id="projList" class="proj-list"></ol>
+    </div>
+  </div>
+
+  <!-- 彈窗：管理密碼 / 編輯模式 -->
+  <div id="authModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('authModal')">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3>🔐 編輯模式驗證</h3>
+        <button class="btn-close" onclick="closeModal('authModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="authHintText" class="muted-text">輸入管理密碼後即可在手機或電腦修改作業並自動同步雲端。</p>
+        <input type="password" id="authPassInput" class="input" placeholder="請輸入管理密碼"
+          onkeydown="if(event.key==='Enter') submitAuthPass()">
+        <label class="checkbox-row">
+          <input type="checkbox" id="authRememberCheck" checked>
+          <span>在此裝置記住密碼（建議個人手機勾選，公用電腦請勿勾選）</span>
+        </label>
+        <div id="authErrorMsg" class="error-text" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('authModal')">取消</button>
+        <button class="btn btn-primary" onclick="submitAuthPass()">🔓 進入編輯模式</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗：快速切換班級 -->
+  <div id="classModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('classModal')">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3>🏫 切換班級</h3>
+        <button class="btn-close" onclick="closeModal('classModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="quickClassList" class="quick-class-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('classModal'); switchView('settings'); promptAddClass();">➕ 新增班級</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗：各項作業未完成名單總覽 -->
+  <div id="incompleteSummaryModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('incompleteSummaryModal')">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 id="incompleteModalTitle">👀 各項作業未完成名單</h3>
+        <button class="btn-close" onclick="closeModal('incompleteSummaryModal')">✕</button>
+      </div>
+      <div class="modal-body" style="max-height: 68vh; overflow-y: auto;">
+        <p class="muted-text" style="margin-top:0;">顯示尚未達到「已繳交／已訂正」的學生，點擊學生名字可直接更新為已繳交（需編輯模式）。</p>
+        <div id="incompleteSummaryBody" class="incomplete-summary-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="copyMissingReport()">📋 複製名單</button>
+        <button class="btn btn-primary" onclick="closeModal('incompleteSummaryModal')">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- 匯出圖片用函式庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="/js/cloud.js?v=cute1"></script>
+  <script src="/js/app.js?v=cute1"></script>
+</body>
+</html>
