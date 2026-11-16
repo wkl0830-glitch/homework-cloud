@@ -59,6 +59,12 @@
 
   <!-- 主內容區 -->
   <main class="container">
+    <!-- 唯讀模式全域警示提醒（點擊解鎖） -->
+    <div id="readonlyWarningBanner" class="readonly-warning-banner" onclick="handleEditModeClick()">
+      <span class="warning-icon">🔒</span>
+      <span class="warning-text">目前為「唯讀檢視模式」，任何修改均不會儲存至雲端。<strong>點此輸入密碼解鎖 ➜</strong></span>
+    </div>
+
     <!-- 尚未選擇班級的歡迎引導 -->
     <section id="emptyClassBanner" class="card empty-hero" style="display:none;">
       <div class="empty-hero-icon">🏫</div>
@@ -119,12 +125,6 @@
           <button class="btn btn-secondary btn-sm" onclick="exportChecklistPng()">🖼️ 匯出圖片</button>
           <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ 列印 / PDF</button>
         </div>
-      </div>
-
-      <!-- 唯讀模式警示提醒（點擊解鎖） -->
-      <div id="readonlyWarningBanner" class="readonly-warning-banner" onclick="handleEditModeClick()">
-        <span class="warning-icon">🔒</span>
-        <span class="warning-text">目前為「唯讀檢視模式」，登記作業不會儲存至雲端。<strong>點此輸入密碼解鎖 ➜</strong></span>
       </div>
 
       <!-- 作業頁籤 -->
